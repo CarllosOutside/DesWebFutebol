@@ -19,6 +19,10 @@ import com.jogador.futebol.models.Pagamento;
 import com.jogador.futebol.repositories.JogadorRepo;
 import com.jogador.futebol.repositories.PagamentoRepo;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+
+
 @RestController
 @RequestMapping("/api")
 public class PagamentoController {
@@ -30,8 +34,9 @@ public class PagamentoController {
 	JogadorRepo jogrepo;
 
 	//cria um novo pagamento para um jogador
-	@PostMapping("/jogador/{id}/pagamento")
-	public ResponseEntity<Pagamento> createPagamento(@PathVariable("id") long id, @RequestBody Pagamento pagamento) {
+	@Operation(summary = "Adiciona pagamento", description = "Cria um novo pagamento para o jogador com id passado")
+	@PostMapping(path="/jogador/{id}/pagamento")
+	public ResponseEntity<Pagamento> createPagamento(@Parameter(description = "Id do jogador que está efetuando novo pagamento") @PathVariable("id") long id, @RequestBody Pagamento pagamento) {
 		// procura jogador
 		Optional<Jogador> jogadordata = jogrepo.findById(id);
 		if (jogadordata.isPresent()) {
@@ -50,8 +55,9 @@ public class PagamentoController {
 	}
 
 	//Lista de pagamentos de um jogador
-	@GetMapping("/jogador/{id}/pagamento") // id do jogador
-	public ResponseEntity<List<Pagamento>> getPagamentoByJogadoId(@PathVariable("id") long id)
+	@Operation(summary = "Busca pagamentos", description = "Retorna lista de pagamentos de um jogador com id passado")
+	@GetMapping(path="/jogador/{id}/pagamento") // id do jogador
+	public ResponseEntity<List<Pagamento>> getPagamentoByJogadoId(@Parameter(description = "Id do jogador cuja lista de pagamentos sera retornada") @PathVariable("id") long id)
 	{
 		// procura jogador
 		Optional<Jogador> jogadordata = jogrepo.findById(id);
@@ -69,9 +75,10 @@ public class PagamentoController {
 
 	}
 	
-	//deleta um pagamento por idp
-	@DeleteMapping("/jogador/{idj}/pagamento/{idp}")
-    public ResponseEntity<HttpStatus> deleteJogador(@PathVariable("idj") long idj, @PathVariable("idp") long idp) {
+	//deleta um pagamento por idp = id do pagamento
+	@Operation(summary = "Deleta um pagamento", description = "Deleta um pagamento efetuado por um jogador")
+	@DeleteMapping(path="/jogador/{id}/pagamento/{idp}")
+    public ResponseEntity<HttpStatus> deleteJogador(@Parameter(description = "Id do jogador", required=false) @PathVariable("id") long id, @Parameter(description = "Id do pagamento") @PathVariable("idp") long idp) {
         try {
             pagrepo.deleteById(idp);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -80,8 +87,10 @@ public class PagamentoController {
         }
     }
 	
-	@DeleteMapping("/jogador/{id}/pagamento")
-    public ResponseEntity<HttpStatus> deleteAllPagamentos(@PathVariable("id") long id) {
+	//deleta todos os pagamentos de um jogador com id=id
+	@Operation(summary = "Deleta pagamentos de um jogador", description = "Deleta todos os pagamentos efetuados por um jogador")
+	@DeleteMapping(path="/jogador/{id}/pagamento")
+    public ResponseEntity<HttpStatus> deleteAllPagamentos(@Parameter(description = "Id do jogador") @PathVariable("id") long id) {
 		// procura jogador
 				Optional<Jogador> jogadordata = jogrepo.findById(id);
 				if (jogadordata.isPresent()) {	

@@ -19,6 +19,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.jogador.futebol.models.Jogador;
 import com.jogador.futebol.repositories.JogadorRepo;
+import com.jogador.futebol.repositories.PagamentoRepo;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+
 
 @RestController
 @RequestMapping("/api")
@@ -27,8 +32,12 @@ public class JogadorController {
 	@Autowired
     JogadorRepo jogadorrepo;
 	
-	@GetMapping("/jogador")
-    public ResponseEntity<List<Jogador>> getAllJogadores(@RequestParam(required = false) String nome) 
+	@Autowired
+	PagamentoRepo pagrepo;
+	
+	@Operation(summary = "Busca jogador", description = "Retorna lista de jogadores, pode retornar uma lista de jogadores com o mesmo nome")
+	@GetMapping(path="/jogador")
+    public ResponseEntity<List<Jogador>> getAllJogadores(@Parameter(description = "Nome que está sendo buscado") @RequestParam(required = false) String nome) 
 	{
         try {
             List<Jogador> jogadores = new ArrayList<Jogador>();
@@ -50,8 +59,9 @@ public class JogadorController {
         }
     }
 	
-	@GetMapping("/jogador/{id}")
-    public ResponseEntity<Jogador> getJogadorById(@PathVariable("id") long id) 
+	@Operation(summary = "Busca jogador por id", description = "Retorna um jogador com o id selecionado")
+	@GetMapping(path="/jogador/{id}")
+    public ResponseEntity<Jogador> getJogadorById(@Parameter(description = "Id do jogador que está sendo buscado") @PathVariable("id") long id) 
 	{
         Optional<Jogador> jogador = jogadorrepo.findById(id);
  
@@ -62,7 +72,8 @@ public class JogadorController {
         }
     }
 	
-	@PostMapping("/jogador")
+	@Operation(summary = "cadastro jogador", description = "cadastra um novo jogador")
+	@PostMapping(path="/jogador")
     public ResponseEntity<Jogador> createJogador(@RequestBody Jogador jogador) 
 	{
         try {
@@ -74,8 +85,9 @@ public class JogadorController {
         }
     }
 	
-	@PutMapping("/jogador/{id}")
-    public ResponseEntity<Jogador> updateJogador(@PathVariable("id") long id, @RequestBody Jogador jogador)
+	@Operation(summary = "Atualiza jogador", description = "Atualiza informações de um jogador dado o id")
+	@PutMapping(path="/jogador/{id}")
+    public ResponseEntity<Jogador> updateJogador(@Parameter(description = "Id do jogador que está sendo atualizado") @PathVariable("id") long id, @RequestBody Jogador jogador)
 	{
         Optional<Jogador> jogadord = jogadorrepo.findById(id);
  
@@ -84,25 +96,41 @@ public class JogadorController {
             _jogador.setNome(jogador.getNome());
             _jogador.setEmail(jogador.getEmail());
             _jogador.setDatanasc(jogador.getDatanasc());
+            //sobrescreve o jogador antigo(id se mantem)
             return new ResponseEntity<>(jogadorrepo.save(_jogador), HttpStatus.OK);
         } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 	
-	 @DeleteMapping("/jogador/{id}")
-	    public ResponseEntity<HttpStatus> deleteJogador(@PathVariable("id") long id) {
-	        try {
-	            jogadorrepo.deleteById(id);
-	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+	@Operation(summary = "Deleta jogador", description = "Deleta jogador por id")
+	 @DeleteMapping(path="/jogador/{id}")
+	    public ResponseEntity<HttpStatus> deleteJogador(@Parameter(description = "Id do jogador que será deletado") @PathVariable("id") long id) {
+		Optional<Jogador> jogadordata = jogadorrepo.findById(id);
+		if(jogadordata.isPresent())
+		{
+		try {
+			//deleta pagamentos de um jogador(pois contém FK de jogador)
+            pagrepo.deleteByJogador(jogadordata.get()); /*jogadorrepo.findbyid retorna um optional. 
+            deleteByJogador não aceita optional, por isso deve criar um optional antes e depois 
+            extrair o objeto Jogador*/
+            
+            //depois de deletar os pagamentos, deleta o jogador
+	        jogadorrepo.deleteById(id);
+	        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	        } catch (Exception e) {
 	            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
 	        }
+		} else {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
 	    }
 	 
-	    @DeleteMapping("/jogador")
+	@Operation(summary = "Deleta jogadores", description = "Deleta todos os jogadores")
+	    @DeleteMapping(path="/jogador")
 	    public ResponseEntity<HttpStatus> deleteAllJogadores() {
 	        try {
+	        	pagrepo.deleteAll();
 	            jogadorrepo.deleteAll();
 	            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	        } catch (Exception e) {
